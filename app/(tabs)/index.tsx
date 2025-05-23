@@ -1,75 +1,135 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
+import React from 'react';
+import {
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Dimensions,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { HelloWave } from '@/components/HelloWave';
+
+const { width } = Dimensions.get('window');
+const TILE_SIZE = width / 2 - 24;
+
+const tiles = [
+  {
+    id: '1',
+    title: 'Explore',
+    icon: 'rocket-outline',
+    color: '#007AFF',
+    navigate: 'explore',
+  },
+  {
+    id: '2',
+    title: 'Dark Mode',
+    icon: 'moon-outline',
+    color: '#333333',
+    navigate: '',
+  },
+  {
+    id: '3',
+    title: 'Settings',
+    icon: 'settings-outline',
+    color: '#5856D6',
+    navigate: 'settings',
+  },
+  {
+    id: '4',
+    title: 'Profile',
+    icon: 'person-outline',
+    color: '#FF9500',
+    navigate: '',
+  }, {
+    id: '5',
+    title: 'Profile',
+    icon: 'person-outline',
+    color: '#BE1515',
+    navigate: 'explore',
+  },
+  {
+  id: '6',
+  title: 'File Manager',
+  icon: 'folder-outline',
+  color: '#2E6B15',
+  navigate: 'FileManagerScreen',
+},
+
+];
 
 export default function HomeScreen() {
+  const navigation = useNavigation();
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ThemedView style={styles.container}>
+      <View style={styles.header}>
+        <ThemedText type="title">One Stop</ThemedText>
+        
+      </View>
+
+      <FlatList
+        data={tiles}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        contentContainerStyle={styles.grid}
+        renderItem={({ item }) => (
+          <TileButton
+            icon={item.icon}
+            
+            title={item.title}
+            color={item.color}
+            onPress={() => {
+              if (item.navigate) navigation.navigate(item.navigate);
+            }}
+          />
+        )}
+      />
+    </ThemedView>
+  );
+}
+
+function TileButton({ icon, title, color, onPress }) {
+  return (
+    <TouchableOpacity style={[styles.tile, { backgroundColor: color }]} onPress={onPress}>
+      <Ionicons name={icon} size={32} color="#fff" />
+      <ThemedText type="defaultSemiBold" style={styles.tileText}>
+        {title}
+      </ThemedText>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    paddingTop: 40,
+    paddingHorizontal: 12,
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 6,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  grid: {
+    justifyContent: 'space-between',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  tile: {
+    width: TILE_SIZE,
+    height: TILE_SIZE,
+    borderRadius: 2,
+    padding: 16,
+    margin: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tileText: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 8,
   },
 });
