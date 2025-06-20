@@ -9,7 +9,7 @@ import Animated, {
 
 import { ThemedView } from '@/components/ThemedView';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/context/ThemeContext'; // Import your custom useTheme
 
 const HEADER_HEIGHT = 250;
 
@@ -23,7 +23,8 @@ export default function ParallaxScrollView({
   headerImage,
   headerBackgroundColor,
 }: Props) {
-  const colorScheme = useColorScheme() ?? 'light';
+  // Use your custom theme context
+  const { theme: colorScheme, backgroundImageUri } = useTheme(); 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
   const bottom = useBottomTabOverflow();
@@ -59,7 +60,12 @@ export default function ParallaxScrollView({
           ]}>
           {headerImage}
         </Animated.View>
-        <ThemedView style={styles.content}>{children}</ThemedView>
+        <ThemedView 
+          style={[
+            styles.content, 
+            backgroundImageUri ? styles.contentTransparent : {} // Make content transparent if global bg is set
+          ]}>
+            {children}</ThemedView>
       </Animated.ScrollView>
     </ThemedView>
   );
@@ -79,4 +85,7 @@ const styles = StyleSheet.create({
     gap: 16,
     overflow: 'hidden',
   },
+  contentTransparent: {
+    backgroundColor: 'transparent', // Allow global background to show through
+  }
 });

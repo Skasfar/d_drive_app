@@ -52,8 +52,8 @@ export default function TabLayout() {
     <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.circle.fill" color={color} />,
+          title: 'Settings', // Correct title
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />, // More appropriate icon
         }}
       />
     </Tabs>

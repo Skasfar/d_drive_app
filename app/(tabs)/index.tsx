@@ -1,21 +1,29 @@
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import {
+  Dimensions,
   FlatList,
   StyleSheet,
   TouchableOpacity,
   View,
-  Dimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { HelloWave } from '@/components/HelloWave';
 
 const { width } = Dimensions.get('window');
 const TILE_SIZE = width / 2 - 24;
 
-const tiles = [
+interface Tile {
+  id: string;
+  title: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  navigate?: string; // For simple navigation
+  action?: () => void; // For custom actions
+}
+
+const tiles: Tile[] = [
   {
     id: '1',
     title: 'Explore',
@@ -28,7 +36,7 @@ const tiles = [
     title: 'Dark Mode',
     icon: 'moon-outline',
     color: '#333333',
-    navigate: '',
+    // navigate: '', // Action will be handled by id or custom action property
   },
   {
     id: '3',
@@ -42,20 +50,20 @@ const tiles = [
     title: 'Profile',
     icon: 'person-outline',
     color: '#FF9500',
-    navigate: '',
+    // navigate: '', // Action will be handled by id or custom action property
   }, {
     id: '5',
-    title: 'Profile',
-    icon: 'person-outline',
+    title: 'Secure Folder',
+    icon: 'lock-closed-outline', // Changed icon
     color: '#BE1515',
-    navigate: 'explore',
+    // No 'navigate' key, will be handled by id in onPress
   },
   {
   id: '6',
   title: 'File Manager',
   icon: 'folder-outline',
   color: '#2E6B15',
-  navigate: 'FileManagerScreen',
+  navigate: 'FileManagerScreen', // Simple navigation
 },
 
 ];
@@ -77,12 +85,24 @@ export default function HomeScreen() {
         contentContainerStyle={styles.grid}
         renderItem={({ item }) => (
           <TileButton
-            icon={item.icon}
+            icon={item.icon} // Already typed by Tile[]
             
             title={item.title}
             color={item.color}
             onPress={() => {
-              if (item.navigate) navigation.navigate(item.navigate);
+              if (item.id === '5') { // Secure Folder
+                // @ts-ignore - Ensure LockScreen is a valid route name
+                navigation.navigate('LockScreen'); 
+              } else if (item.navigate) {
+                // @ts-ignore
+                navigation.navigate(item.navigate);
+              } else if (item.action) {
+                item.action();
+              }
+              // Example: Handle other non-navigating tiles if needed
+              // else if (item.id === '2') { // Dark Mode tile
+              //   console.log("Dark Mode tile pressed - implement action");
+              // }
             }}
           />
         )}
@@ -90,8 +110,13 @@ export default function HomeScreen() {
     </ThemedView>
   );
 }
-
-function TileButton({ icon, title, color, onPress }) {
+interface TileButtonProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  color: string;
+  onPress: () => void;
+}
+function TileButton({ icon, title, color, onPress }: TileButtonProps) {
   return (
     <TouchableOpacity style={[styles.tile, { backgroundColor: color }]} onPress={onPress}>
       <Ionicons name={icon} size={32} color="#fff" />
@@ -111,7 +136,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 16,
     gap: 6,
   },
@@ -123,12 +147,12 @@ const styles = StyleSheet.create({
     height: TILE_SIZE,
     borderRadius: 2,
     padding: 16,
-    margin: 2,
+    margin: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
   tileText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     marginTop: 8,
   },
