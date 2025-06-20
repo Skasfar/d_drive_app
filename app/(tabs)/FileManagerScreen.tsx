@@ -157,10 +157,12 @@ export default function FileManagerScreen() {
           }
           try {
             const info = await FileSystem.getInfoAsync(fileUri);
-            console.log(`[SAF Load] URI: ${fileUri}, isDirectory: ${info.isDirectory}, Exists: ${info.exists}, InfoName: ${info.name !== undefined ? info.name : "undefined"}`);
+            const name = decodeURIComponent(fileUri.substring(fileUri.lastIndexOf('/') + 1));
+
+            console.log(`[SAF Load] URI: ${fileUri}, isDirectory: ${info.isDirectory}, Exists: ${info.exists}, InfoName: ${name !== undefined ? name : "undefined"}`);
             if (info.exists) {
               entries.push({
-                name: info.name || decodeURIComponent(fileUri.substring(fileUri.lastIndexOf('/') + 1)),
+                name: name || decodeURIComponent(fileUri.substring(fileUri.lastIndexOf('/') + 1)),
                 uri: fileUri,
                 isDirectory: info.isDirectory,
               });
@@ -356,6 +358,8 @@ export default function FileManagerScreen() {
     onProgress: (message: string) => void
   ): Promise<void> => {
     const sourceInfo = await FileSystem.getInfoAsync(sourceItemUri);
+  
+
     if (!sourceInfo.exists) {
       onProgress(`Skipped: ${sourceItemUri} (source does not exist)`);
       console.warn(`Source item ${sourceItemUri} does not exist. Skipping copy.`);
@@ -363,7 +367,9 @@ export default function FileManagerScreen() {
     }
 
     // Determine item name. For SAF URIs, getInfoAsync().name is preferred.
-    let itemName = sourceInfo.name;
+    const name = decodeURIComponent(sourceItemUri.substring(sourceItemUri.lastIndexOf('/') + 1));
+    let itemName = name;
+
     if (!itemName) { // Fallback if sourceInfo.name is not available
       const uriSegment = sourceItemUri.substring(sourceItemUri.lastIndexOf('/') + 1);
       const decodedSegment = decodeURIComponent(uriSegment);
@@ -563,18 +569,37 @@ export default function FileManagerScreen() {
     return ['mp3', 'wav', 'aac', 'm4a', 'ogg'].includes(extension);
   }
 
-  const navigateToDirectory = async (item: FileSystemEntry) => {
-    if (item.isDirectory) {
-      setPathHistory(prevHistory => [...prevHistory, { path: currentPath, name: currentPathName }]);
-      setCurrentPath(item.uri);
-      setCurrentPathName(item.name);
-      await saveLastPath(item.uri, item.name);
-    } else if (isViewableMedia(item.name) || isAudioFile(item.name)) {
-      router.push({ pathname: '/media-viewer', params: { uri: item.uri, name: item.name } });
-    } else {
-      openFile(item);
+const navigateToDirectory = async (item: FileSystemEntry) => {
+  if (item.isDirectory) {
+    setPathHistory(prevHistory => [...prevHistory, { path: currentPath, name: currentPathName }]);
+    setCurrentPath(item.uri);
+    setCurrentPathName(item.name);
+    await saveLastPath(item.uri, item.name);
+  } else if (isViewableMedia(item.name) || isAudioFile(item.name)) {
+    try {
+      const info = await FileSystem.getInfoAsync(item.uri);
+      if (!info.exists) {
+        Alert.alert("Error", "File not found.");
+        return;
+      }
+
+      // Force copy to local cache
+      const localUri = `${FileSystem.cacheDirectory}${Date.now()}_${item.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      await FileSystem.copyAsync({ from: item.uri, to: localUri });
+
+      router.push({
+        pathname: '/media-viewer',
+        params: { uri: localUri, name: item.name },
+      });
+
+    } catch (e) {
+      Alert.alert("Error", `Unable to open file: ${e.message}`);
     }
-  };
+  } else {
+    openFile(item);
+  }
+};
+
 
   const confirmSingleItemDelete = async (itemToDelete: FileSystemEntry) => {
     Alert.alert(
