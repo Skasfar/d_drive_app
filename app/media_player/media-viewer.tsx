@@ -1,12 +1,12 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Ionicons } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
 import { Audio, AVPlaybackStatus, InterruptionModeAndroid, InterruptionModeIOS, ResizeMode, Video } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-
+import { ActivityIndicator, Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 const getFileType = (fileName: string): 'image' | 'video' | 'audio' | 'unknown' => {
   const extension = fileName.split('.').pop()?.toLowerCase() || '';
   if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) return 'image';
@@ -17,7 +17,8 @@ const getFileType = (fileName: string): 'image' | 'video' | 'audio' | 'unknown' 
 
 export default function MediaViewerScreen() {
   const params = useLocalSearchParams<{ uri?: string; name?: string }>();
-  const { uri: initialUri, name } = params;
+  const { uri: initialUri, name: rawName } = params;
+  const name = rawName ? decodeURIComponent(rawName.split('/').pop() || rawName) : undefined;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,11 +100,17 @@ export default function MediaViewerScreen() {
   }, [mediaUri, fileType]);
 
   const togglePlayPause = async () => {
-    if (soundRef.current && status?.isLoaded) {
+    if (soundRef.current && status && status.isLoaded) {
       status.isPlaying
         ? await soundRef.current.pauseAsync()
         : await soundRef.current.playAsync();
     }
+  };
+
+  const formatTime = (millis: number) => {
+    const minutes = Math.floor(millis / 60000);
+    const seconds = Math.floor((millis % 60000) / 1000);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
   if (loading) {
@@ -117,6 +124,9 @@ export default function MediaViewerScreen() {
   }
 
   const renderMedia = () => {
+    const duration = status?.isLoaded ? status.durationMillis ?? 0 : 0;
+    const position = status?.isLoaded ? status.positionMillis ?? 0 : 0;
+
     switch (fileType) {
       case 'image':
         return <Image source={{ uri: mediaUri }} style={styles.media} resizeMode="contain" />;
@@ -138,10 +148,33 @@ export default function MediaViewerScreen() {
       case 'audio':
         return (
           <View style={styles.audioContainer}>
-            <ThemedText style={styles.audioTitle}>{name || 'Audio Track'}</ThemedText>
+            <ThemedText style={styles.audioTitle}>{name?.split('/').pop() || 'Audio Track'}</ThemedText>
+
+            <View style={styles.sliderWrapper}>
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={duration}
+                value={position}
+                onSlidingComplete={async (value) => {
+                  if (status && status.isLoaded && soundRef.current) {
+                    await soundRef.current.setPositionAsync(value);
+                  }
+                }}
+                minimumTrackTintColor="#1fb28a"
+                maximumTrackTintColor="#fff"
+                thumbTintColor="#fff"
+              />
+            </View>
+
+            <View style={styles.timeLabels}>
+              <ThemedText style={styles.timeText}>{formatTime(position)}</ThemedText>
+              <ThemedText style={styles.timeText}>{formatTime(duration)}</ThemedText>
+            </View>
+
             <TouchableOpacity onPress={togglePlayPause} style={styles.playPauseButton}>
               <Ionicons
-                name={status?.isPlaying ? "pause-circle" : "play-circle"}
+                name={status?.isLoaded && status.isPlaying ? "pause-circle" : "play-circle"}
                 size={80}
                 color="#fff"
               />
@@ -155,8 +188,17 @@ export default function MediaViewerScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: name || 'Media Viewer', headerStyle: { backgroundColor: '#000' }, headerTintColor: '#fff' }} />
-      {renderMedia()}
+      <Stack.Screen
+  options={{
+    headerTitle: () => (
+      <Text style={{ color: '#fff', fontSize: 18 }}>
+        {name?.split('/').pop() || 'Media Viewer'}
+      </Text>
+    ),
+    headerStyle: { backgroundColor: '#000' },
+    headerTintColor: '#fff',
+  }}
+/>{renderMedia()}
     </ThemedView>
   );
 }
@@ -166,7 +208,25 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
   media: { width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.75 },
   errorText: { color: 'red' },
-  audioContainer: { justifyContent: 'center', alignItems: 'center', padding: 20 },
+  audioContainer: { justifyContent: 'center', alignItems: 'center', padding: 20, width: '100%' },
   audioTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
   playPauseButton: { marginTop: 20 },
+  timeLabels: {
+    width: '90%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  timeText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  sliderWrapper: {
+    width: '90%',
+    marginVertical: 10,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
 });

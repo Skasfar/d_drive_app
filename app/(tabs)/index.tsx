@@ -26,8 +26,8 @@ interface Tile {
 const tiles: Tile[] = [
   {
     id: '1',
-    title: 'Explore',
-    icon: 'rocket-outline',
+    title: 'Accounts',
+    icon: 'person-outline',
     color: '#007AFF',
     navigate: 'explore',
   },
@@ -47,8 +47,8 @@ const tiles: Tile[] = [
   },
   {
     id: '4',
-    title: 'Profile',
-    icon: 'person-outline',
+    title: 'Cloud Sync',
+    icon: 'cloud-upload-outline',
     color: '#FF9500',
     // navigate: '', // Action will be handled by id or custom action property
   }, {
@@ -75,7 +75,6 @@ export default function HomeScreen() {
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title">One Stop</ThemedText>
-        
       </View>
 
       <FlatList
@@ -92,7 +91,7 @@ export default function HomeScreen() {
             onPress={() => {
               if (item.id === '5') { // Secure Folder
                 // @ts-ignore - Ensure LockScreen is a valid route name
-                navigation.navigate('LockScreen'); 
+                navigation.navigate('secure/LockScreen'); 
               } else if (item.navigate) {
                 // @ts-ignore
                 navigation.navigate(item.navigate);
@@ -137,7 +136,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-    gap: 6,
+    // gap: 6, // Removed to prevent whitespace warning.
   },
   grid: {
     justifyContent: 'space-between',

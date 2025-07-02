@@ -588,11 +588,11 @@ const navigateToDirectory = async (item: FileSystemEntry) => {
       await FileSystem.copyAsync({ from: item.uri, to: localUri });
 
       router.push({
-        pathname: '/media-viewer',
+        pathname: '/media_player/media-viewer',
         params: { uri: localUri, name: item.name },
       });
 
-    } catch (e) {
+    } catch (e : any) {
       Alert.alert("Error", `Unable to open file: ${e.message}`);
     }
   } else {
@@ -868,7 +868,7 @@ const FileListItem: React.FC<FileListItemProps> = ({ item, onPress, onLongPress,
             color={item.isDirectory ? "#FFC107" : "#555"}
             style={styles.fileIcon} />
         )}
-        <ThemedText style={styles.fileName} numberOfLines={1}>{item.name}</ThemedText>
+        <ThemedText style={styles.fileName} numberOfLines={1}>{decodeURIComponent(item.name?.split('/').pop() || item.name)}</ThemedText>
       </View>
       </View>
     </TouchableOpacity>

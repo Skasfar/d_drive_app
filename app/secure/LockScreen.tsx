@@ -2,14 +2,12 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 
 const PASSWORD_STORAGE_KEY = 'SecureFolderPassword';
-// IMPORTANT: For actual sensitive data like passwords, use expo-secure-store instead of AsyncStorage.
-// AsyncStorage is not encrypted and is not suitable for storing sensitive credentials.
 
 type LockScreenMode = 'set_password' | 'enter_password' | 'loading';
 
@@ -22,7 +20,7 @@ export default function LockScreen() {
 
   const checkPasswordExists = useCallback(async () => {
     try {
-      const storedPassword = await AsyncStorage.getItem(PASSWORD_STORAGE_KEY);
+      const storedPassword = await SecureStore.getItemAsync(PASSWORD_STORAGE_KEY);
       if (storedPassword) {
         setMode('enter_password');
       } else {
@@ -53,9 +51,9 @@ export default function LockScreen() {
       return;
     }
     try {
-      await AsyncStorage.setItem(PASSWORD_STORAGE_KEY, password);
+      await SecureStore.setItemAsync(PASSWORD_STORAGE_KEY, password);
       Alert.alert("Password Set", "Your Secure Folder password has been set.");
-      router.replace('/(tabs)/SecureFolderBrowser'); // Use replace to prevent going back to set password
+      router.replace('/secure/SecureFolderBrowser'); // Use replace to prevent going back to set password
     } catch (e) {
       console.error("Failed to save password", e);
       setError('Failed to save password. Please try again.');
@@ -68,9 +66,9 @@ export default function LockScreen() {
       return;
     }
     try {
-      const storedPassword = await AsyncStorage.getItem(PASSWORD_STORAGE_KEY);
+      const storedPassword = await SecureStore.getItemAsync(PASSWORD_STORAGE_KEY);
       if (password === storedPassword) {
-        router.replace('/(tabs)/SecureFolderBrowser'); // Use replace to prevent going back to lock screen
+        router.replace('/secure/SecureFolderBrowser'); // Use replace to prevent going back to lock screen
       } else {
         setError('Incorrect password. Please try again.');
         setPassword(''); // Clear password field on incorrect attempt

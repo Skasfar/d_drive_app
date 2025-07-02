@@ -247,23 +247,22 @@ export default function SecureFolderBrowserScreen() {
     onProgress: (message: string) => void
   ): Promise<void> => {
     const sourceInfo = await FileSystem.getInfoAsync(sourceItemUri);
+    
     if (!sourceInfo.exists) {
       onProgress(`Skipped: ${sourceItemUri} (source does not exist)`);
       console.warn(`Source item ${sourceItemUri} does not exist. Skipping copy.`);
       return;
     }
 
-    let itemName = sourceInfo.name;
+    // Derive item name from the URI, as getInfoAsync does not provide it.
+    const uriSegment = sourceItemUri.substring(sourceItemUri.lastIndexOf('/') + 1);
+    const decodedSegment = decodeURIComponent(uriSegment);
+    const lastSlash = decodedSegment.lastIndexOf('/');
+    const lastColon = decodedSegment.lastIndexOf(':'); 
+    let itemName = decodedSegment.substring(Math.max(lastSlash, lastColon) + 1);
     if (!itemName) { 
-      const uriSegment = sourceItemUri.substring(sourceItemUri.lastIndexOf('/') + 1);
-      const decodedSegment = decodeURIComponent(uriSegment);
-      const lastSlash = decodedSegment.lastIndexOf('/');
-      const lastColon = decodedSegment.lastIndexOf(':'); 
-      itemName = decodedSegment.substring(Math.max(lastSlash, lastColon) + 1);
-      if (!itemName) { 
-          itemName = `unknown_item_${Date.now()}`;
-          console.warn(`Could not determine item name for URI: ${sourceItemUri}, using placeholder: ${itemName}`);
-      }
+        itemName = `unknown_item_${Date.now()}`;
+        console.warn(`Could not determine item name for URI: ${sourceItemUri}, using placeholder: ${itemName}`);
     }
 
     let sanitizedItemName = itemName.replace(/:/g, '_'); 
@@ -557,7 +556,7 @@ export default function SecureFolderBrowserScreen() {
         Alert.alert("Error", "Cannot navigate outside the Secure Vault.");
       }
     } else if (isViewableMedia(item.name) || isAudioFile(item.name)) {
-      router.push({ pathname: '/media-viewer', params: { uri: item.uri, name: item.name } });
+      router.push({ pathname: '/media_player/media-viewer', params: { uri: item.uri, name: item.name } });
     } else {
       openFileWithSharing(item);
     }
@@ -849,76 +848,78 @@ const FileListItem: React.FC<FileListItemProps> = ({ item, onPress, onLongPress,
         headerImage={
           <Ionicons size={310} name="folder-open-outline" style={styles.headerImage} />
         }>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="title">{currentPathName}</ThemedText>
-        </ThemedView>
-      <View style={styles.headerContainer}>
-        {currentPath !== secureVaultRootPath && pathHistory.length > 0 && (
-          <TouchableOpacity onPress={navigateUp} style={styles.upButton}>
-            <Ionicons name="arrow-up-circle-outline" size={28} color="#007AFF" />
-            <ThemedText style={styles.upButtonText}>Up</ThemedText>
-          </TouchableOpacity>
-        )}
-
-        {isSelectionModeActive ? (
-          <View style={styles.selectionHeader}>
-            <TouchableOpacity onPress={cancelSelectionMode} style={styles.headerButton}>
-              <Ionicons name="close-circle" size={28} color="#007AFF" />
+        <View style={styles.contentContainer}> 
+          <ThemedView style={styles.titleContainer}>
+            <ThemedText type="title">{currentPathName}</ThemedText>
+          </ThemedView>
+        <View style={styles.headerContainer}>
+          {currentPath !== secureVaultRootPath && pathHistory.length > 0 && (
+            <TouchableOpacity onPress={navigateUp} style={styles.upButton}>
+              <Ionicons name="arrow-up-circle-outline" size={28} color="#007AFF" />
+              <ThemedText style={styles.upButtonText}>Up</ThemedText>
             </TouchableOpacity>
-            <ThemedText style={styles.selectionCountText}>{selectedItemUris.size} selected</ThemedText>
-            <View style={styles.selectionActions}>
-              <TouchableOpacity onPress={() => initiateMoveOperation(directoryContents.filter(item => selectedItemUris.has(item.uri)))} style={styles.headerButton} disabled={selectedItemUris.size === 0}>
-                <Ionicons name="move-outline" size={28} color={selectedItemUris.size === 0 ? "#ccc" : "#007AFF"} />
-              </TouchableOpacity>
-              {canRestoreSelectedItem && selectedItemForRestore && (
-                <TouchableOpacity onPress={() => handleRestoreFolder(selectedItemForRestore.name)} style={styles.headerButton}>
-                  <Ionicons name="arrow-undo-outline" size={28} color={"#FF9500"} />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity onPress={confirmBatchDelete} style={styles.headerButton} disabled={selectedItemUris.size === 0}>
-                <Ionicons name="trash-outline" size={28} color={selectedItemUris.size === 0 ? "#ccc" : "red"} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          // Title is now in ThemedView above
-          <View style={styles.actionsContainer}> 
-            {isMoveModeActive && itemsToMove.length > 0 ? (
-              <ThemedText type="subtitle" style={styles.moveStatusText} numberOfLines={1} ellipsizeMode="middle">
-                Move to: {currentPathName}
-              </ThemedText>
-            ) : null}
+          )}
 
-            {isMoveModeActive && !isSelectionModeActive ? (
-              <View style={styles.moveActionButtons}>
-                <TouchableOpacity onPress={executeMove} style={[styles.headerButton, styles.moveHereButton]}><ThemedText style={styles.headerButtonText}>Move Here</ThemedText></TouchableOpacity>
-                <TouchableOpacity onPress={cancelMoveOperation} style={[styles.headerButton, styles.cancelMoveButton]}><ThemedText style={styles.headerButtonText}>Cancel</ThemedText></TouchableOpacity>
-              </View>
-            ) : !isSelectionModeActive && ( 
-                Platform.OS === 'android' && (
-                  <TouchableOpacity onPress={handleImportFolder} disabled={isImporting || loading} style={styles.headerIconButton}>
-                    <Ionicons name="cloud-download-outline" size={30} color="green" />
+          <View style={styles.spacedItem}>{isSelectionModeActive ? (
+            <View style={styles.selectionHeader}>
+              <TouchableOpacity onPress={cancelSelectionMode} style={styles.headerButton}>
+                <Ionicons name="close-circle" size={28} color="#007AFF" />
+              </TouchableOpacity>
+              <ThemedText style={styles.selectionCountText}>{selectedItemUris.size} selected</ThemedText>
+              <View style={styles.selectionActions}>
+                <TouchableOpacity onPress={() => initiateMoveOperation(directoryContents.filter(item => selectedItemUris.has(item.uri)))} style={styles.headerButton} disabled={selectedItemUris.size === 0}>
+                  <Ionicons name="move-outline" size={28} color={selectedItemUris.size === 0 ? "#ccc" : "#007AFF"} />
+                </TouchableOpacity>
+                {canRestoreSelectedItem && selectedItemForRestore && (
+                  <TouchableOpacity onPress={() => handleRestoreFolder(selectedItemForRestore.name)} style={styles.headerButton}>
+                    <Ionicons name="arrow-undo-outline" size={28} color={"#FF9500"} />
                   </TouchableOpacity>
-                )
-            )}
+                )}
+                <TouchableOpacity onPress={confirmBatchDelete} style={styles.headerButton} disabled={selectedItemUris.size === 0}>
+                  <Ionicons name="trash-outline" size={28} color={selectedItemUris.size === 0 ? "#ccc" : "red"} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            // Title is now in ThemedView above
+            <View style={styles.actionsContainer}> 
+              {isMoveModeActive && itemsToMove.length > 0 ? (
+                <ThemedText type="subtitle" style={styles.moveStatusText} numberOfLines={1} ellipsizeMode="middle">
+                  Move to: {currentPathName}
+                </ThemedText>
+              ) : null}
+
+              {isMoveModeActive && !isSelectionModeActive ? (
+                <View style={styles.moveActionButtons}>
+                  <TouchableOpacity onPress={executeMove} style={[styles.headerButton, styles.moveHereButton]}><ThemedText style={styles.headerButtonText}>Move Here</ThemedText></TouchableOpacity>
+                  <TouchableOpacity onPress={cancelMoveOperation} style={[styles.headerButton, styles.cancelMoveButton]}><ThemedText style={styles.headerButtonText}>Cancel</ThemedText></TouchableOpacity>
+                </View>
+              ) : !isSelectionModeActive && ( 
+                  Platform.OS === 'android' && (
+                    <TouchableOpacity onPress={handleImportFolder} disabled={isImporting || loading} style={styles.headerIconButton}>
+                      <Ionicons name="cloud-download-outline" size={30} color="green" />
+                    </TouchableOpacity>
+                  )
+              )}
+            </View>)}
           </View>
+        </View>
+        <View style={styles.spacedItem}>{directoryContents.length === 0 && !loading && (
+          <ThemedText style={styles.emptyText}>Secure Vault is empty or this folder is empty.</ThemedText>
         )}
-      </View>
-      {directoryContents.length === 0 && !loading && (
-        <ThemedText style={styles.emptyText}>Secure Vault is empty or this folder is empty.</ThemedText>
-      )}
-      {/* Replace FlatList with direct mapping if ParallaxScrollView handles scrolling of its children */}
-      <View> 
-        {directoryContents.map((item) => (
-          <FileListItem
-            key={item.uri} // Add key for mapped items
-            item={item}
-            onPress={handleItemPress}
-            onLongPress={handleItemLongPress}
-            isSelected={selectedItemUris.has(item.uri)}
-            isSelectionModeActive={isSelectionModeActive}
-          />
-        ))}
+        {/* Replace FlatList with direct mapping if ParallaxScrollView handles scrolling of its children */}
+        <View> 
+          {directoryContents.map((item) => (
+            <FileListItem
+              key={item.uri} // Add key for mapped items
+              item={item}
+              onPress={handleItemPress}
+              onLongPress={handleItemLongPress}
+              isSelected={selectedItemUris.has(item.uri)}
+              isSelectionModeActive={isSelectionModeActive}
+            />
+          ))}
+        </View></View>
       </View>
     </ParallaxScrollView>
   );
@@ -1014,6 +1015,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, // Added padding, similar to original container
     paddingTop: 16, // Add some space from the parallax header image
   },
+  contentContainer: {
+    // gap: 16, // Removed to prevent whitespace warning. Using margins on children instead.
+  },
+  spacedItem: {
+    marginTop: 16,
+  },
   headerImage: { // Copied from explore.tsx, adjust icon and color
     // color: '#808080',
     bottom: -90,
@@ -1060,7 +1067,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     textAlign: 'center',
-    marginTop: 20,
+    // marginTop: 20, // Replaced by spacedItem
     fontSize: 16,
     color: '#888', // Lighter color for empty text
   },

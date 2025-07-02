@@ -28,51 +28,53 @@ export default function SettingsScreen() {
         // You might want a different icon for settings, e.g., 'settings'
         // <Ionicons size={310} name="settings-outline" style={styles.headerImage} />
       }>
-      <ThemedView style={styles.titleContainer}>
-        {/* 
-          If a global background is set, this ThemedView might also become transparent.
-          We might want to give it an explicit background or wrap the text differently.
-        */}
-        <ThemedText type="title">Settings</ThemedText> 
-      </ThemedView>
+      <View style={styles.contentContainer}>
+        <ThemedView style={styles.titleContainer}>
+          {/* 
+            If a global background is set, this ThemedView might also become transparent.
+            We might want to give it an explicit background or wrap the text differently.
+          */}
+          <ThemedText type="title">Settings</ThemedText> 
+        </ThemedView>
 
-      {/* Appearance Settings */}
-      <ThemedView style={styles.sectionContainer}>
-        <ThemedText type="subtitle">Appearance</ThemedText>
-        
-        {/* Option: Use System Theme */}
-        <ThemeToggleOption />
+        {/* Appearance Settings */}
+        <ThemedView style={styles.sectionContainer}>
+          <ThemedText type="subtitle">Appearance</ThemedText>
+          
+          {/* Option: Use System Theme */}
+          <ThemeToggleOption />
 
-        {/* Option: Change Background Image */}
-        <ChangeBackgroundImageOption />
+          {/* Option: Change Background Image */}
+          <ChangeBackgroundImageOption />
 
-        {/* Option: Remove Background Image */}
-        <RemoveBackgroundImageOption />
+          {/* Option: Remove Background Image */}
+          <RemoveBackgroundImageOption />
 
-        {/* Option: Adjust Blur Intensity */}
-        <BlurIntensitySliderOption />
+          {/* Option: Adjust Blur Intensity */}
+          <BlurIntensitySliderOption />
 
-      </ThemedView>
+        </ThemedView>
 
-      {/* Other Settings Sections (Placeholder) */}
-      <ThemedView 
-        style={styles.sectionContainer}
-        lightColor={Colors.light.background} // Explicit background
-        darkColor={Colors.dark.background}   // Explicit background
-      >
-        <ThemedText type="subtitle">General</ThemedText>
-        {/* Add other settings options here */}
-        <ThemedText>Other settings will go here.</ThemedText>
-      </ThemedView>
+        {/* Other Settings Sections (Placeholder) */}
+        <ThemedView 
+          style={styles.sectionContainer}
+          lightColor={Colors.light.background} // Explicit background
+          darkColor={Colors.dark.background}   // Explicit background
+        >
+          <ThemedText type="subtitle">General</ThemedText>
+          {/* Add other settings options here */}
+          <ThemedText>Other settings will go here.</ThemedText>
+        </ThemedView>
 
-      {/* Example Collapsible (can keep or remove) */}
-       <Collapsible title="About App">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-       </Collapsible>
+        {/* Example Collapsible (can keep or remove) */}
+        <Collapsible title="About App">
+          <ThemedText>
+            This template has light and dark mode support. The{' '}
+            <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
+            what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
+          </ThemedText>
+        </Collapsible>
+      </View>
     </ParallaxScrollView>
   );
 }
@@ -206,8 +208,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, 
     paddingTop: 16, 
   },
+  contentContainer: {
+    gap: 16,
+  },
   sectionContainer: {
-    marginTop: 20,
+    // marginTop: 20, // Replaced by gap in contentContainer
     paddingHorizontal: 16, 
   },
   optionRow: {

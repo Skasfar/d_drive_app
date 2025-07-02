@@ -65,7 +65,8 @@ export default function ParallaxScrollView({
             styles.content, 
             backgroundImageUri ? styles.contentTransparent : {} // Make content transparent if global bg is set
           ]}>
-            {children}</ThemedView>
+            {children}
+        </ThemedView>
       </Animated.ScrollView>
     </ThemedView>
   );
@@ -82,7 +83,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 32,
-    gap: 16,
     overflow: 'hidden',
   },
   contentTransparent: {
